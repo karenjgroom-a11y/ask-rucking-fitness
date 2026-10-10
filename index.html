@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rucking Q&amp;A Board</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --card: #1e2128;
+    --text: #f2f4f0;
+    --muted: #9aa0a6;
+    --accent: #c6ff1a;
+    --accent-soft: #2a331a;
+    --border: #2c2f36;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f6f0;
+      --card: #ffffff;
+      --text: #14161a;
+      --muted: #5c6259;
+      --accent: #7ea300;
+      --accent-soft: #eaf7c8;
+      --border: #e2e6da;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f0;
+    --card: #ffffff;
+    --text: #14161a;
+    --muted: #5c6259;
+    --accent: #7ea300;
+    --accent-soft: #eaf7c8;
+    --border: #e2e6da;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .wrap { width: 100%; max-width: 640px; padding: 20px 16px 40px; }
+  h1 { font-size: 1.4rem; margin: 4px 0 2px; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 18px; }
+  form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  textarea, input[type=text] {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+    font-size: 0.95rem; font-family: inherit; resize: vertical;
+  }
+  button {
+    padding: 10px 16px; border-radius: 10px; border: none;
+    background: var(--accent); color: #12140d; font-weight: 700;
+    font-size: 0.95rem; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .post {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+  }
+  .q-name { font-weight: 600; font-size: 0.85rem; color: var(--muted); }
+  .q-text { margin: 4px 0 10px; font-size: 1rem; }
+  .answer {
+    background: var(--accent-soft); border-radius: 10px; padding: 10px 12px;
+    font-size: 0.92rem; line-height: 1.4;
+  }
+  .answer-label { font-weight: 700; color: var(--accent); font-size: 0.8rem; margin-bottom: 4px; }
+  .pending { color: var(--muted); font-style: italic; font-size: 0.9rem; }
+  .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+  .brand {
+    background: var(--card); border: 1px solid var(--accent);
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 20px;
+  }
+  .brand-name { font-size: 1.15rem; font-weight: 800; color: var(--accent); margin: 0 0 2px; }
+  .brand-tag { font-size: 0.85rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .brand-desc { font-size: 0.9rem; line-height: 1.45; margin-bottom: 8px; }
+  .brand-meta { font-size: 0.82rem; color: var(--muted); }
+  .brand-meta a { color: var(--accent); text-decoration: none; }
+  #status { color: var(--muted); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🥾 Rucking Q&amp;A Board</h1>
+  <div class="sub">Ask a question — you'll get an answer automatically.</div>
+
+  <div class="brand">
+    <div class="brand-name">Rucking Fitness — Sandwich, Kent</div>
+    <div class="brand-tag">Built Different, Forged Harder</div>
+    <div class="brand-desc">
+      Run by Neil Osborne along the coastlines and historic trails of East Kent, Rucking Fitness runs tactical fitness events that go beyond the standard ruck — heavy hauls and time trials, weighted package missions and resistance runs, and high-rep functional workouts at checkpoints. Personal training in muscle endurance and fitness.
+    </div>
+    <div class="brand-meta">
+      Sandwich, Kent · <a href="https://www.facebook.com/p/Rucking-Fitness-61556167712618/" target="_blank" rel="noopener">Facebook page</a> · <a href="https://ruckingfitnessandpt.co.uk/" target="_blank" rel="noopener">ruckingfitnessandpt.co.uk</a>
+    </div>
+  </div>
+
+  <form id="postForm">
+    <input type="text" id="nameInput" placeholder="Your name (optional)" maxlength="40">
+    <textarea id="questionInput" placeholder="Ask a rucking question — pack weight, pace, gear, injuries, training plans..." rows="2" required></textarea>
+    <button type="submit" id="submitBtn">Ask question</button>
+  </form>
+
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="posts"></div>
+  <p class="sub">Questions and answers are saved only in this browser. Avoid sharing personal medical information. AI answers can be mistaken.</p>
+</div>
+
+<script>
+const STORAGE_KEY = 'rucking-fitness-qa-private-v1';
+const postsEl = document.getElementById('posts');
+const statusEl = document.getElementById('status');
+function readPosts() { try { const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(data) ? data : []; } catch { return []; } }
+function savePosts(posts) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(posts.slice(0, 50))); return true; } catch { return false; } }
+function render() {
+  postsEl.replaceChildren();
+  const posts = readPosts();
+  if (!posts.length) { const empty=document.createElement('div');empty.className='empty';empty.textContent='No questions yet — be the first to ask.';postsEl.append(empty);return; }
+  for (const p of posts) {
+    const card=document.createElement('div');card.className='post';
+    const name=document.createElement('div');name.className='q-name';name.textContent=p.name || 'Anonymous';
+    const question=document.createElement('div');question.className='q-text';question.textContent=p.question;
+    const answer=document.createElement('div');answer.className='answer';
+    const label=document.createElement('div');label.className='answer-label';label.textContent='Answer';
+    const body=document.createElement('div');body.textContent=p.answer || 'No answer saved';
+    answer.append(label,body);card.append(name,question,answer);postsEl.append(card);
+  }
+}
+document.getElementById('postForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nameInput=document.getElementById('nameInput');
+  const questionInput=document.getElementById('questionInput');
+  const button=document.getElementById('submitBtn');
+  const question=questionInput.value.trim();
+  if (!question) return;
+  button.disabled=true;statusEl.textContent='Thinking…';
+  try {
+    const response=await fetch('/.netlify/functions/ask', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});
+    let result;try { result=await response.json(); } catch { throw new Error('The server returned an unexpected response.'); }
+    if (!response.ok) throw new Error(result.error || 'The AI service is unavailable.');
+    const answer=String(result.answer || '').trim();
+    if (!answer) throw new Error('No answer was returned.');
+    const saved=savePosts([{name:nameInput.value.trim(),question,answer,ts:Date.now()},...readPosts()]);
+    render();questionInput.value='';nameInput.value='';
+    statusEl.textContent=saved ? 'Answered and saved on this device.' : 'Answered, but your browser could not save the history.';
+  } catch (err) { statusEl.textContent='Sorry — '+err.message+' Your question is still in the box so you can try again.'; }
+  finally {button.disabled=false;}
+});
+render();
+</script>
+</body>
+</html>
