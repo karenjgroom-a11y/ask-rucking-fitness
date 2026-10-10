@@ -5,6 +5,14 @@ exports.handler = async (event) => {
   let question;
   try { question=JSON.parse(event.body || '{}').question; } catch { return reply(400,{error:'Invalid request.'}); }
   if (typeof question !== 'string' || !question.trim() || question.length > MAX_QUESTION) return reply(400,{error:'Please enter a question of 700 characters or fewer.'});
+  console.log('ASK_AI_DIAGNOSTIC', JSON.stringify({
+  openaiBase: !!process.env.OPENAI_BASE_URL,
+  openaiKey: !!process.env.OPENAI_API_KEY,
+  aiBase: !!process.env.AI_BASE_URL,
+  aiKey: !!process.env.AI_API_KEY,
+  gatewayUrl: !!process.env.NETLIFY_AI_GATEWAY_URL,
+  gatewayKey: !!process.env.NETLIFY_AI_GATEWAY_KEY
+}));
   const base=(process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || '').replace(/\/$/,'');
   const token=process.env.OPENAI_API_KEY || process.env.AI_API_KEY;
   const model=process.env.AI_MODEL || 'gpt-4.1-mini';
